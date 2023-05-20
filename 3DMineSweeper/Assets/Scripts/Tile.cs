@@ -17,13 +17,13 @@ public class Tile : MonoBehaviour
     public Sprite highlightSprite;
     private Sprite defaultSprite;
 
-    private AudioManager audioManager;
+    //private AudioManager audioManager;
 
     private void Start()
     {
         defaultSprite = GetComponent<SpriteRenderer>().sprite;
         GetComponent<SpriteRenderer>().sprite = coverSprite;
-        audioManager = FindObjectOfType<AudioManager>();
+        //audioManager = FindObjectOfType<AudioManager>();
     }
 
     /* sets the icon and type of the tile
@@ -49,7 +49,7 @@ public class Tile : MonoBehaviour
         isFlaged = false;
         GetComponent<SpriteRenderer>().sprite = defaultSprite;
 
-        audioManager.Play("RevealTile");
+        //audioManager.Play("RevealTile");
     }
 
     //covers a tile
@@ -66,7 +66,7 @@ public class Tile : MonoBehaviour
         isFlaged = true;
         GetComponent<SpriteRenderer>().sprite = flagSprite;
 
-        audioManager.Play("Flag");
+        //audioManager.Play("Flag");
     }
 
     //changes tiles icon to a covered tile sprite (removed a flag)
@@ -75,7 +75,7 @@ public class Tile : MonoBehaviour
         isFlaged = false;
         GetComponent<SpriteRenderer>().sprite = coverSprite;
 
-        audioManager.Play("Unflag");
+       // audioManager.Play("Unflag");
     }
 
     //changes tiles icon to a hit mine sprite (player revealed a mine)
@@ -83,7 +83,7 @@ public class Tile : MonoBehaviour
     {
         GetComponent<SpriteRenderer>().sprite = hitMineSprite;
 
-        audioManager.Play("Defeat");
+        //audioManager.Play("Defeat");
     }
 
     //changes tiles icon to a miss flag sprite (flag was placed on a safe tile)
