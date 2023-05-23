@@ -5,7 +5,7 @@ using UnityEngine;
 public class ChangeZoom : MonoBehaviour
 {
     public Game game;
-    public int expectedVal = 10;
+    public int expectedVal = 10;//expected size of the grid
     private readonly float defaultSize = 6f;
     public float offsetChange = 0.5f;
     public float sizeChange = 0.6f;

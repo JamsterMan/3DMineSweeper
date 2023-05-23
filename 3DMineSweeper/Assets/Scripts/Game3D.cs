@@ -36,6 +36,7 @@ public class Game3D : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        
         if (!gameOver) {
             Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             int x = Mathf.RoundToInt(mousePosition.x);
@@ -103,6 +104,7 @@ public class Game3D : MonoBehaviour
                 }
             }
         }
+        
     }
 
     //reveals tiles around x, y
@@ -286,7 +288,7 @@ public class Game3D : MonoBehaviour
 
 
     /* Sets tiles to mines
-     * mousex and mousey are the tile clicked that cant be a mine
+     * mouseX and mouseY are the tile clicked that cant be a mine
      */
     void PlaceMines(int mouseX, int mouseY)
     {
@@ -302,6 +304,7 @@ public class Game3D : MonoBehaviour
             grid[x, y].SetTile("Mine", Tile.TileType.Mine);
         }
 
+        //Set the count for number of adjactent mines
         for (x = 0; x < width; x++) {
             for (y = 0; y < height; y++) {
                 if (grid[x, y].type != Tile.TileType.Mine){
@@ -356,4 +359,5 @@ public class Game3D : MonoBehaviour
     {
         mineCounter.text = "" + mineCount;
     }
+    
 }
