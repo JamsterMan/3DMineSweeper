@@ -9,6 +9,7 @@ public class Game3D : MonoBehaviour
     private GameObject[,] objectGrid;
     public int width = 10;
     public int height = 10;
+    public int depth = 3;
     public int numMines = 12;
     public int numFlags = 0;
     public int numCoveredTiles = 0;
@@ -294,53 +295,63 @@ public class Game3D : MonoBehaviour
      */
     void PlaceMines(int mouseX, int mouseY)
     {
-        string[,] charGrid = new string[width,height];
-        int x, y;
+        string[,,] charGrid = new string[width,height, depth];
+        int x, y , z;
         for (int m = 0; m < numMines; m++) { // place mines in the field
             x = Random.Range(0, width);
             y = Random.Range(0, height);
+            z = Random.Range(0, depth);
 
-            while(charGrid[x, y] == "M" || (x == mouseX && y == mouseY)){//grid[x, y].type == Tile.TileType.Mine || (x == mouseX && y == mouseY)) {//makes sure no mine placements overlap
+            while (charGrid[x, y, z] == "M" || (x == mouseX && y == mouseY)){//grid[x, y].type == Tile.TileType.Mine || (x == mouseX && y == mouseY)) {//makes sure no mine placements overlap
                 x = Random.Range(0, width);
                 y = Random.Range(0, height);
+                z = Random.Range(0, depth);
             }
             //grid[x, y].SetTile("Mine", Tile.TileType.Mine);
-            charGrid[x, y] = "M";
+            charGrid[x, y, z] = "M";
         }
 
         //Set the count for number of adjactent mines
-        for (x = 0; x < width; x++) {
-            for (y = 0; y < height; y++) {
-                if (charGrid[x, y] != "M"){//grid[x, y].type != Tile.TileType.Mine){
-                    int total = 0;
-                    for (int xOff = -1; xOff <= 1; xOff++) {
-                        for (int yOff = -1; yOff <= 1; yOff++) {
-                            if (x + xOff > -1 && x + xOff < width && y + yOff > -1 && y + yOff < height) {//for corner tiles
-                                if (charGrid[x +xOff, y+yOff] == "M"){//grid[x + xOff, y + yOff].type == Tile.TileType.Mine) {
-                                    total++;
+        for (z = 0; z < depth; z++) {
+            for (x = 0; x < width; x++) {
+                for (y = 0; y < height; y++) {
+
+                    if (charGrid[x, y, z] != "M") {//grid[x, y].type != Tile.TileType.Mine){
+                        int total = 0;
+
+                        for (int xOff = -1; xOff <= 1; xOff++) {
+                            for (int yOff = -1; yOff <= 1; yOff++) {
+                                for (int zOff = -1; zOff <= 1; zOff++) {
+                                    if (x + xOff > -1 && x + xOff < width && y + yOff > -1 && y + yOff < height && z + zOff > -1 && z + zOff < depth) {//for corner tiles
+                                        if (charGrid[x + xOff, y + yOff, z + zOff] == "M") {//grid[x + xOff, y + yOff].type == Tile.TileType.Mine) {
+                                            total++;
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                    if (total == 0) {
-                        //grid[x, y].SetTile("Empty", Tile.TileType.Blank);
-                        charGrid[x, y] = "0";
-                    } else {
-                        //grid[x, y].SetTile("" + total, Tile.TileType.Num);
-                        //grid[x, y].SetMineNeighbors(total);
-                        charGrid[x, y] = ""+total;
+                        if (total == 0) {
+                            //grid[x, y].SetTile("Empty", Tile.TileType.Blank);
+                            charGrid[x, y, z] = "0";
+                        }
+                        else {
+                            //grid[x, y].SetTile("" + total, Tile.TileType.Num);
+                            //grid[x, y].SetMineNeighbors(total);
+                            charGrid[x, y, z] = "" + total;
+                        }
                     }
                 }
             }
         }
         string board = "";
-        for (int i = 0; i < width; i++)
-        {
-            for (int j = 0; j < height; j++)
-            {
-                board = board + charGrid[i,j] + " ";
+        for (z = 0; z < depth; z++){
+            for (x = 0; x < width; x++){
+                for (y = 0; y < height; y++){
+                    board += charGrid[x, y, z] + " ";
+                }
+                board += "\n";
             }
-            board = board + "\n";
+            board += "\n\n";
         }
         Debug.Log(board);
     }
