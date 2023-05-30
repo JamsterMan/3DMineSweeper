@@ -22,7 +22,9 @@ public class Game3D : MonoBehaviour
 
     void Start()
     {
-        grid = new Tile[width, height];
+        PlaceMines(1, 1);
+
+        /*grid = new Tile[width, height];
         objectGrid = new GameObject[width, height];
         SetStartValues();
 
@@ -30,11 +32,11 @@ public class Game3D : MonoBehaviour
             for (int j = 0; j < height; j++){
                 PlaceTiles(i, j);
             }
-        }
+        }*/
     }
 
     // Update is called once per frame
-    void Update()
+    /*void Update()
     {
         
         if (!gameOver) {
@@ -105,7 +107,7 @@ public class Game3D : MonoBehaviour
             }
         }
         
-    }
+    }*/
 
     //reveals tiles around x, y
     void RevealNeighbors(int x, int y)
@@ -292,41 +294,55 @@ public class Game3D : MonoBehaviour
      */
     void PlaceMines(int mouseX, int mouseY)
     {
+        string[,] charGrid = new string[width,height];
         int x, y;
         for (int m = 0; m < numMines; m++) { // place mines in the field
             x = Random.Range(0, width);
             y = Random.Range(0, height);
 
-            while(grid[x, y].type == Tile.TileType.Mine || (x == mouseX && y == mouseY)) {//makes sure no mine placements overlap
+            while(charGrid[x, y] == "M" || (x == mouseX && y == mouseY)){//grid[x, y].type == Tile.TileType.Mine || (x == mouseX && y == mouseY)) {//makes sure no mine placements overlap
                 x = Random.Range(0, width);
                 y = Random.Range(0, height);
             }
-            grid[x, y].SetTile("Mine", Tile.TileType.Mine);
+            //grid[x, y].SetTile("Mine", Tile.TileType.Mine);
+            charGrid[x, y] = "M";
         }
 
         //Set the count for number of adjactent mines
         for (x = 0; x < width; x++) {
             for (y = 0; y < height; y++) {
-                if (grid[x, y].type != Tile.TileType.Mine){
+                if (charGrid[x, y] != "M"){//grid[x, y].type != Tile.TileType.Mine){
                     int total = 0;
                     for (int xOff = -1; xOff <= 1; xOff++) {
                         for (int yOff = -1; yOff <= 1; yOff++) {
-                            if (x + xOff > -1 && x + xOff < width && y + yOff > -1 && y + yOff < height) {//for coner tiles
-                                if (grid[x + xOff, y + yOff].type == Tile.TileType.Mine) {
+                            if (x + xOff > -1 && x + xOff < width && y + yOff > -1 && y + yOff < height) {//for corner tiles
+                                if (charGrid[x +xOff, y+yOff] == "M"){//grid[x + xOff, y + yOff].type == Tile.TileType.Mine) {
                                     total++;
                                 }
                             }
                         }
                     }
                     if (total == 0) {
-                        grid[x, y].SetTile("Empty", Tile.TileType.Blank);
+                        //grid[x, y].SetTile("Empty", Tile.TileType.Blank);
+                        charGrid[x, y] = "0";
                     } else {
-                        grid[x, y].SetTile("" + total, Tile.TileType.Num);
-                        grid[x, y].SetMineNeighbors(total);
+                        //grid[x, y].SetTile("" + total, Tile.TileType.Num);
+                        //grid[x, y].SetMineNeighbors(total);
+                        charGrid[x, y] = ""+total;
                     }
                 }
             }
         }
+        string board = "";
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                board = board + charGrid[i,j] + " ";
+            }
+            board = board + "\n";
+        }
+        Debug.Log(board);
     }
 
     void PlaceTiles(int x, int y)
