@@ -6,10 +6,11 @@ using UnityEngine.UI;
 public class Game3D : MonoBehaviour
 {
     private Tile[,,] grid;
-    private GameObject[,] objectGrid;//stay 2D grid since we will only show one layer at a time
+    private GameObject[,,] objectGrid;
     public int width = 10;
     public int height = 10;
     public int depth = 3;
+    public int currentDepth = 0;
     public int numMines = 12;
     public int numFlags = 0;
     public int numCoveredTiles = 0;
@@ -26,12 +27,14 @@ public class Game3D : MonoBehaviour
         //PlaceMines(1, 1);
 
         grid = new Tile[width, height, depth];
-        objectGrid = new GameObject[width, height];
+        objectGrid = new GameObject[width, height, depth];
         SetStartValues();
 
         for (int i = 0; i < width; i++){
             for (int j = 0; j < height; j++){
-                PlaceTiles(i, j);
+                for (int k = 0; k < depth; k++) {
+                    PlaceTiles(i, j, k);
+                }
             }
         }
 
@@ -259,7 +262,7 @@ public class Game3D : MonoBehaviour
         height = newHeight;
         numMines = newMines;
         grid = new Tile[width, height, 0];
-        objectGrid = new GameObject[width, height];
+        objectGrid = new GameObject[width, height, depth];
         zoomCam.ZoomCameraOnBoard();
         MakeNewBoard();
         SetStartValues();//sets values used to tell win/loss to starting vals
@@ -273,8 +276,10 @@ public class Game3D : MonoBehaviour
     {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                Destroy(objectGrid[i, j]);
-                Destroy(grid[i, j, 0]);
+                for (int k = 0; k < depth; k++) {
+                    Destroy(objectGrid[i, j, k]);
+                    Destroy(grid[i, j, k]);
+                }
             }
         }
     }
@@ -284,7 +289,9 @@ public class Game3D : MonoBehaviour
     {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                PlaceTiles(i, j);
+                for (int k = 0; k < depth; k++) {
+                    PlaceTiles(i, j, k);
+                }
             }
         }
     }
@@ -332,12 +339,12 @@ public class Game3D : MonoBehaviour
                             }
                         }
                         if (total == 0) {
-                            grid[x, y, 0].SetTile("Empty", Tile.TileType.Blank);
+                            grid[x, y, z].SetTile("Empty", Tile.TileType.Blank);
                             charGrid[x, y, z] = "0";
                         }
                         else {
-                            grid[x, y, 0].SetTile("" + total, Tile.TileType.Num);
-                            grid[x, y, 0].SetMineNeighbors(total);
+                            grid[x, y, z].SetTile("" + total, Tile.TileType.Num);
+                            grid[x, y, z].SetMineNeighbors(total);
                             charGrid[x, y, z] = "" + total;
                         }
                     }
@@ -357,14 +364,18 @@ public class Game3D : MonoBehaviour
         Debug.Log(board);
     }
 
-    void PlaceTiles(int x, int y)
+    void PlaceTiles(int x, int y, int z)
     {
         //hide game objects that should not be seen (all but current depth)
         GameObject gameObject = Instantiate(Resources.Load("Prefabs/Empty", typeof(GameObject)), new Vector3(x, y, 0), Quaternion.identity) as GameObject;
         Tile tile = gameObject.GetComponent<Tile>();
 
-        objectGrid[x, y] = gameObject;
-        grid[x, y, 0] = tile;
+        objectGrid[x, y, z] = gameObject;
+        grid[x, y, z] = tile;
+
+        if(z != currentDepth) {//hide tiles of different layers
+            objectGrid[x, y, z].SetActive(false);
+        }
     }
 
     public void QuitGame()
