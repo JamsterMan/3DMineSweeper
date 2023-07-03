@@ -4559,6 +4559,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   width: 10
   height: 10
+  depth: 3
   numMines: 12
   numFlags: 0
   numCoveredTiles: 0

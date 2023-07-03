@@ -32,7 +32,14 @@ public class Tile : MonoBehaviour
      */
     public void SetTile(string icon, TileType tile)
     {
-        defaultSprite = Resources.Load<Sprite>("Graphics/" + icon);
+        Sprite[] all = Resources.LoadAll<Sprite>("Graphics/SpriteSheet");
+
+        foreach (var s in all) {
+            if (s.name == icon) {
+                defaultSprite = s;
+            }
+        }
+        //defaultSprite = Resources.Load<Sprite>("Graphics/" + icon);
         type = tile;
     }
 
