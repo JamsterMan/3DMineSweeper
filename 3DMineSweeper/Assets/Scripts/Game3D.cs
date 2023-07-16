@@ -10,7 +10,7 @@ public class Game3D : MonoBehaviour
     public int width = 10;
     public int height = 10;
     public int depth = 3;
-    public int currentDepth = 0;
+    private int currentDepth = 0;
     public int numMines = 12;
     public int numFlags = 0;
     public int numCoveredTiles = 0;
@@ -43,75 +43,117 @@ public class Game3D : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        BoardActions();   
         if (!gameOver) {
-            Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            int x = Mathf.RoundToInt(mousePosition.x);
-            int y = Mathf.RoundToInt(mousePosition.y);
-            if (x >= 0 && x < width && y >= 0 && y < height) {//check if mouse was in the game field
-                if (EventSystem.current.IsPointerOverGameObject())//stop clicks through UI
-                    return;
-                Tile tile = grid[x, y, 0];
-                if (Input.GetButtonDown("Fire1")) {//reveal a tile on left mouse click
-                    if (firstReveal) {
-                        PlaceMines(x,y);
-                        firstReveal = false;
+            TileActions();
+        }
+        
+    }
+
+    //takes mouse input to decide what to do the the tile at the current mouse position
+    void TileActions()
+    {
+        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        int x = Mathf.RoundToInt(mousePosition.x);
+        int y = Mathf.RoundToInt(mousePosition.y);
+        if (x >= 0 && x < width && y >= 0 && y < height) {//check if mouse was in the game field
+            if (EventSystem.current.IsPointerOverGameObject())//stop clicks through UI
+                return;
+            Tile tile = grid[x, y, currentDepth];
+            if (Input.GetButtonDown("Fire1")) {//reveal a tile on left mouse click
+                if (firstReveal) {
+                    PlaceMines(x, y);
+                    firstReveal = false;
+                }
+                if (tile.isCovered && !tile.isFlaged) {//cant reveal a flaged tile
+                    tile.RevealTile();
+                    numCoveredTiles--;
+                    if (tile.type == Tile.TileType.Blank) {
+                        RevealNeighbors(x, y);
                     }
-                    if (tile.isCovered && !tile.isFlaged) {//cant reveal a flaged tile
-                        tile.RevealTile();
-                        numCoveredTiles--;
-                        if (tile.type == Tile.TileType.Blank) {
-                            RevealNeighbors(x, y);
-                        } else if (tile.type == Tile.TileType.Mine) {//game over
-                            tile.HitMine();
-                            GameLost();
-                        }
-                        CheckWin();
+                    else if (tile.type == Tile.TileType.Mine) {//game over
+                        tile.HitMine();
+                        GameLost();
                     }
-                } else if (Input.GetButtonDown("Fire2")) {//flag a tile on right mouse click
-                    if (tile.isCovered) {//cant flag revealed tiles
-                        if (tile.isFlaged) {//if tile is already flaged
-                            numFlags--;
-                            numCoveredTiles++;//flags are not counted as coveredTiles to make win check simpler
-                            tile.UnflagTile();
-                        } else {
-                            numFlags++;
-                            numCoveredTiles--;//flags are not counted as coveredTiles to make win check simpler
-                            tile.FlagTile();
-                        }
-                        SetMineCounterText(numMines - numFlags);
-                        CheckWin();
+                    CheckWin();
+                }
+            }
+            else if (Input.GetButtonDown("Fire2")) {//flag a tile on right mouse click
+                if (tile.isCovered) {//cant flag revealed tiles
+                    if (tile.isFlaged) {//if tile is already flaged
+                        numFlags--;
+                        numCoveredTiles++;//flags are not counted as coveredTiles to make win check simpler
+                        tile.UnflagTile();
                     }
-                } else if (Input.GetButtonDown("Fire3")) {//turn on highlight on middle mouse button pressed down
-                    middleFunc = true;
+                    else {
+                        numFlags++;
+                        numCoveredTiles--;//flags are not counted as coveredTiles to make win check simpler
+                        tile.FlagTile();
+                    }
+                    SetMineCounterText(numMines - numFlags);
+                    CheckWin();
+                }
+            }
+            else if (Input.GetButtonDown("Fire3")) {//turn on highlight on middle mouse button pressed down
+                middleFunc = true;
+                HighlightNeighbors(x, y);
+                xOld = x;
+                yOld = y;
+            }
+            else if (Input.GetButtonUp("Fire3")) {//turn off highlight on middle mouse button release
+                middleFunc = false;
+                UnHighlightNeighbors(x, y);
+            }
+
+        }
+        if (middleFunc) {//highlight surronding uncovered tiles, and reveal tile if correct number of flags present
+            if (xOld != x || yOld != y) {//check if mouse has moved from last position
+                if (xOld >= 0 && yOld >= 0)
+                    UnHighlightNeighbors(xOld, yOld);
+                if (x >= 0 && x < width && y >= 0 && y < height) { //check if mouse was in the game field
                     HighlightNeighbors(x, y);
                     xOld = x;
                     yOld = y;
-                } else if (Input.GetButtonUp("Fire3")) {//turn off highlight on middle mouse button release
-                    middleFunc = false;
-                    UnHighlightNeighbors(x, y);
                 }
-
-            }
-            if (middleFunc) {//highlight surronding uncovered tiles, and reveal tile if correct number of flags present
-                if (xOld != x || yOld != y) {//check if mouse has moved from last position
-                    if(xOld >= 0 && yOld >= 0)
-                        UnHighlightNeighbors(xOld, yOld);
-                    if (x >= 0 && x < width && y >= 0 && y < height) { //check if mouse was in the game field
-                        HighlightNeighbors(x, y);
-                        xOld = x;
-                        yOld = y;
-                    } else {
-                        if (Input.GetButtonUp("Fire3")) {//turn off highlight
-                            middleFunc = false;
-                            xOld = -1;
-                            yOld = -1;
-                        }
+                else {
+                    if (Input.GetButtonUp("Fire3")) {//turn off highlight
+                        middleFunc = false;
+                        xOld = -1;
+                        yOld = -1;
                     }
                 }
             }
         }
-        
+    }
+
+    //change witch layer of the game board the player is looking at
+    void BoardActions()
+    {
+        if (Input.GetButtonDown("Up")) {//press 'q' to go up one layer up
+            if (currentDepth < depth -1) {
+                ChangeDepth(currentDepth + 1);
+            }
+        }
+        else if (Input.GetButtonDown("Down")) {//press 'e' to go down one layer up
+            if (currentDepth > 0) {
+                ChangeDepth(currentDepth - 1);
+            }
+        }
+    }
+
+    //changes the layer visable to the player, takes in the new layer to show
+    void ChangeDepth(int newDepth)
+    {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                objectGrid[x, y, currentDepth].GetComponent<Renderer>().enabled = false;
+                objectGrid[x, y, newDepth].GetComponent<Renderer>().enabled = true;
+                //objectGrid[x, y, currentDepth].SetActive(false);
+                //objectGrid[x, y, newDepth].SetActive(true);
+            }
+        }
+        currentDepth = newDepth;
+        Debug.Log(currentDepth);
     }
 
     //reveals tiles around x, y
@@ -121,13 +163,13 @@ public class Game3D : MonoBehaviour
             for (int yOff = -1; yOff <= 1; yOff++) {
                 if (x + xOff > -1 && x + xOff < width && y + yOff > -1 && y + yOff < height) {//for coner tiles to not compare with tiles that dont exist
                     if (!grid[x + xOff, y + yOff, 0].isFlaged) {//dont reveal if the player miss flagged something
-                        if (grid[x + xOff, y + yOff, 0].isCovered) {//check if tile is covered
+                        if (grid[x + xOff, y + yOff, currentDepth].isCovered) {//check if tile is covered
                             numCoveredTiles--;
-                            grid[x + xOff, y + yOff, 0].RevealTile();
-                            if (grid[x + xOff, y + yOff, 0].type == Tile.TileType.Blank) {
+                            grid[x + xOff, y + yOff, currentDepth].RevealTile();
+                            if (grid[x + xOff, y + yOff, currentDepth].type == Tile.TileType.Blank) {
                                 RevealNeighbors(x + xOff, y + yOff);
-                            }else if (grid[x + xOff, y + yOff, 0].type == Tile.TileType.Mine) {
-                                grid[x + xOff, y + yOff, 0].HitMine();
+                            }else if (grid[x + xOff, y + yOff, currentDepth].type == Tile.TileType.Mine) {
+                                grid[x + xOff, y + yOff, currentDepth].HitMine();
                                 GameLost();
                             }
                         }
@@ -187,11 +229,13 @@ public class Game3D : MonoBehaviour
         gameOver = true;//stops revealing more tiles after gameover
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                if (grid[i, j, 0].type == Tile.TileType.Mine && grid[i, j, 0].isCovered && !grid[i, j, 0].isFlaged) {//check if all flags are right
-                    grid[i, j, 0].RevealTile();
-                }
-                if (grid[i, j, 0].type != Tile.TileType.Mine && grid[i, j, 0].isFlaged) {//check if all flags are right
-                    grid[i, j, 0].MissFlag();
+                for (int z = 0; z < depth; z++) {
+                    if (grid[i, j, z].type == Tile.TileType.Mine && grid[i, j, 0].isCovered && !grid[i, j, 0].isFlaged) {//check if all flags are right
+                        grid[i, j, z].RevealTile();
+                    }
+                    if (grid[i, j, z].type != Tile.TileType.Mine && grid[i, j, 0].isFlaged) {//check if all flags are right
+                        grid[i, j, z].MissFlag();
+                    }
                 }
             }
         }
@@ -248,8 +292,10 @@ public class Game3D : MonoBehaviour
     {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                grid[i, j, 0].SetTile("Empty", Tile.TileType.Blank);
-                grid[i, j, 0].CoverTile();
+                for (int z = 0; z < depth; z++) {
+                    grid[i, j, z].SetTile("Empty", Tile.TileType.Blank);
+                    grid[i, j, z].CoverTile();
+                }
             }
         }
     }
@@ -315,7 +361,7 @@ public class Game3D : MonoBehaviour
                 y = Random.Range(0, height);
                 z = Random.Range(0, depth);
             }
-            grid[x, y, 0].SetTile("Mine", Tile.TileType.Mine);
+            grid[x, y, z].SetTile("Mine", Tile.TileType.Mine);
             charGrid[x, y, z] = "M";
         }
 
@@ -374,7 +420,8 @@ public class Game3D : MonoBehaviour
         grid[x, y, z] = tile;
 
         if(z != currentDepth) {//hide tiles of different layers
-            objectGrid[x, y, z].SetActive(false);
+            objectGrid[x, y, z].GetComponent<Renderer>().enabled = false;
+            //objectGrid[x, y, z].SetActive(false);
         }
     }
 
