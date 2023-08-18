@@ -69,7 +69,7 @@ public class Game3D : MonoBehaviour
                     tile.RevealTile();
                     numCoveredTiles--;
                     if (tile.type == Tile.TileType.Blank) {
-                        RevealNeighbors(x, y);
+                        RevealNeighbors(x, y, currentDepth);
                     }
                     else if (tile.type == Tile.TileType.Mine) {//game over
                         tile.HitMine();
@@ -148,8 +148,6 @@ public class Game3D : MonoBehaviour
             for (int y = 0; y < height; y++) {
                 objectGrid[x, y, currentDepth].GetComponent<Renderer>().enabled = false;
                 objectGrid[x, y, newDepth].GetComponent<Renderer>().enabled = true;
-                //objectGrid[x, y, currentDepth].SetActive(false);
-                //objectGrid[x, y, newDepth].SetActive(true);
             }
         }
         currentDepth = newDepth;
@@ -157,20 +155,23 @@ public class Game3D : MonoBehaviour
     }
 
     //reveals tiles around x, y
-    void RevealNeighbors(int x, int y)
+    void RevealNeighbors(int x, int y, int z)
     {
         for (int xOff = -1; xOff <= 1; xOff++) {
             for (int yOff = -1; yOff <= 1; yOff++) {
-                if (x + xOff > -1 && x + xOff < width && y + yOff > -1 && y + yOff < height) {//for coner tiles to not compare with tiles that dont exist
-                    if (!grid[x + xOff, y + yOff, 0].isFlaged) {//dont reveal if the player miss flagged something
-                        if (grid[x + xOff, y + yOff, currentDepth].isCovered) {//check if tile is covered
-                            numCoveredTiles--;
-                            grid[x + xOff, y + yOff, currentDepth].RevealTile();
-                            if (grid[x + xOff, y + yOff, currentDepth].type == Tile.TileType.Blank) {
-                                RevealNeighbors(x + xOff, y + yOff);
-                            }else if (grid[x + xOff, y + yOff, currentDepth].type == Tile.TileType.Mine) {
-                                grid[x + xOff, y + yOff, currentDepth].HitMine();
-                                GameLost();
+                for (int zOff = -1; zOff <= 1; zOff++) {
+                    if (x + xOff > -1 && x + xOff < width && y + yOff > -1 && y + yOff < height && z + zOff > -1 && z + zOff < depth) {//for coner tiles to not compare with tiles that dont exist
+                        if (!grid[x + xOff, y + yOff, z + zOff].isFlaged) {//dont reveal if the player miss flagged something
+                            if (grid[x + xOff, y + yOff, z + zOff].isCovered) {//check if tile is covered
+                                numCoveredTiles--;
+                                grid[x + xOff, y + yOff, z + zOff].RevealTile();
+                                if (grid[x + xOff, y + yOff, z + zOff].type == Tile.TileType.Blank) {
+                                    RevealNeighbors(x + xOff, y + yOff, z + zOff);
+                                }
+                                else if (grid[x + xOff, y + yOff, z + zOff].type == Tile.TileType.Mine) {
+                                    grid[x + xOff, y + yOff, z + zOff].HitMine();
+                                    GameLost();
+                                }
                             }
                         }
                     }
@@ -200,7 +201,7 @@ public class Game3D : MonoBehaviour
             }
             //add showing tiles above and below here *********************
             if (grid[x, y, currentDepth].type == Tile.TileType.Num && grid[x, y, currentDepth].mineNeighbors == totalFlags) {//reveals neighbor tiles if the correct number of flags present
-                RevealNeighbors(x, y);
+                RevealNeighbors(x, y, currentDepth);
                 middleFunc = false;
             }
         }
@@ -245,13 +246,15 @@ public class Game3D : MonoBehaviour
     //checks if the player has flagged all the mines or revealed all non mines
     void CheckWin()
     {
-        /*if (numFlags + numCoveredTiles == numMines || numFlags == numMines) {//checks if win condition met
+        if (numFlags + numCoveredTiles == numMines || numFlags == numMines) {//checks if win condition met
             Debug.Log("Checking win");
             int correctFlags = 0;
             for (int i = 0; i < width; i++) {
                 for (int j = 0; j < height; j++) {
-                    if (grid[i, j, 0].type == Tile.TileType.Mine && grid[i, j, 0].isFlaged) {//check if all flags are right
-                        correctFlags++;
+                    for (int k = 0; k < depth; k++) {
+                        if (grid[i, j, k].type == Tile.TileType.Mine && grid[i, j, k].isFlaged) {//check if all flags are right
+                            correctFlags++;
+                        }
                     }
                 }
             }
@@ -259,23 +262,26 @@ public class Game3D : MonoBehaviour
                 if (correctFlags == numMines || correctFlags + numCoveredTiles == numMines) {
                     Debug.Log("Victory");
 
-                    FindObjectOfType<AudioManager>().Play("Victory");//plays a victory sound
+                    //FindObjectOfType<AudioManager>().Play("Victory");//plays a victory sound
 
                     gameOver = true;//stop unflaging and revealing after a win
                     for (int i = 0; i < width; i++) {//flag tile that are not flagged yet
                         for (int j = 0; j < height; j++) {
-                            if (grid[i, j, 0].isCovered && !grid[i, j, 0].isFlaged) {
-                                if (grid[i, j, 0].type == Tile.TileType.Mine) {//counts remaining covered flags
-                                    grid[i, j, 0].FlagTile();
-                                } else {
-                                    grid[i, j, 0].RevealTile();
+                            for (int k = 0; k < depth; k++) {
+                                if (grid[i, j, k].isCovered && !grid[i, j, k].isFlaged) {
+                                    if (grid[i, j, k].type == Tile.TileType.Mine) {//counts remaining covered flags
+                                        grid[i, j, k].FlagTile();
+                                    }
+                                    else {
+                                        grid[i, j, k].RevealTile();
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }*/
+        }
     }
 
     //Resets the gameboard
@@ -421,7 +427,7 @@ public class Game3D : MonoBehaviour
     {
         firstReveal = true;//makes it so mines are place after the next click
         gameOver = false;//allows player to click again
-        numCoveredTiles = width * height;//used for win calculation
+        numCoveredTiles = width * height * depth;//used for win calculation
         numFlags = 0;//used for win calculation
         xOld = -1;
         yOld = -1;
